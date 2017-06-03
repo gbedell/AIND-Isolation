@@ -170,6 +170,40 @@ class MinimaxPlayer(IsolationPlayer):
         # Return the best move from the last completed search iteration
         return best_move
 
+    def max_value(self, game, depth):
+        """Minimax helper function to get maximum value"""
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        legal_moves = game.get_legal_moves()
+
+        # If there are no legal moves, or we've reached 0 depth, return score
+        if not legal_moves or depth == 0:
+            return self.score(game, self)
+
+        value = float("-inf")
+        for move in legal_moves:
+            forecasted_game = game.forecast_move(move)
+            value = max(value, self.min_value(forecasted_game, depth-1))
+        return value
+
+    def min_value(self, game, depth):
+        """Minimax helper function to get minimum value"""
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        
+        legal_moves = game.get_legal_moves()
+
+        if not legal_moves or depth == 0:
+            return self.score(game, self)
+
+        value = float("inf")
+
+        for move in legal_moves:
+            forecasted_game = game.forecast_move(move)
+            value = min(value, self.max_value(forecasted_game, depth-1))
+        return value
+
     def minimax(self, game, depth):
         """Implement depth-limited minimax search algorithm as described in
         the lectures.
@@ -212,9 +246,17 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        # Get all legal moves
+        legal_moves = game.get_legal_moves()
 
+        moves_dict = dict()
+
+        for move in legal_moves:
+            forecasted_game = game.forecast_move(move)
+            score = self.min_value(forecasted_game, depth-1)
+            moves_dict[move] = score
+
+        return max(moves_dict, key=moves_dict.get)
 
 class AlphaBetaPlayer(IsolationPlayer):
     """Game-playing agent that chooses a move using iterative deepening minimax
@@ -305,5 +347,5 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        legal_moves = game.get_legal_moves()
+        return legal_moves[0]
