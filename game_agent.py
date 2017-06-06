@@ -3,8 +3,7 @@ test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
 import random
-import numpy as np
-
+import itertools
 
 class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
@@ -304,7 +303,15 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            return self.alphabeta(game, self.search_depth)
+            for depth in itertools.count():
+
+                # For each depth we go, continue updating our best_move
+                # because we are becoming more intelligent as depth gets
+                # deeper. Once we reach our maximum allotted time,
+                # return the best_move we have found so far
+                best_move =  self.alphabeta(game, depth)
+                if best_move == SearchTimeout():
+                    return best_move
 
         except SearchTimeout:
             pass  # Handle any actions required after timeout as needed
