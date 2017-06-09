@@ -49,12 +49,18 @@ def custom_score(game, player):
     
     corners = [(0,0), (0,game.width), (game.height,0), (game.height,game.width)]
 
+    # If the given player is in a corner, return the minumum possible value
     if game.get_player_location(player) in corners:
         return float("-inf")
 
+    # If the opponent is in a corner, return the maximum possible value
     if game.get_player_location(game.get_opponent(player)) in corners:
         return float("inf")
+
+    # If neither player is in a corner, continue the evaluation
     
+    # Calculate the number of legal moves for a given player minus
+    # the player's legal moves that result in a corner position
     own_moves = game.get_legal_moves(player)
     count_own_corner_moves = 0
     for own_move in own_moves:
@@ -62,6 +68,8 @@ def custom_score(game, player):
             ++count_own_corner_moves
     net_own_moves = len(own_moves) - count_own_corner_moves
 
+    # Calculate the number of legal moves for the opponent minus
+    # the opponent's legal moves that result in a corner position
     opp_moves = game.get_legal_moves(game.get_opponent(player))
     count_opp_corner_moves = 0
     for opp_move in opp_moves:
@@ -69,6 +77,8 @@ def custom_score(game, player):
             ++count_opp_corner_moves
     net_opp_moves = len(opp_moves) - count_opp_corner_moves
 
+    # Return the difference between the given player's legal moves
+    # minus corners and the opponent's legal moves minus corners
     return float(net_own_moves - net_opp_moves)
 
 def custom_score_2(game, player):
@@ -107,15 +117,18 @@ def custom_score_2(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    #Corners
     corners = [(0,0), (0,game.width), (game.height,0), (game.height,game.width)]
 
+    # Count the number of legal moves that result in the given player
+    # being in a corner of the board
     own_moves = game.get_legal_moves(player)
     count_own_corner_moves = 0
     for own_move in own_moves:
         if own_move in corners:
             ++count_own_corner_moves
 
+    # Count the number of legal moves that result in the opponent
+    # being in a corner of the board
     opp_moves = game.get_legal_moves(game.get_opponent(player))
     count_opp_corner_moves = 0
     for opp_move in opp_moves:
@@ -178,14 +191,20 @@ def custom_score_3(game, player):
     corners = [(0,0), (0,game.width), (game.height,0), (game.height,game.width)]
 
     opp_moves = game.get_legal_moves(game.get_opponent(player))
-    count_opp_corner_moves = 0
 
+    # Count the number of legal moves that result in the opponent
+    # ended up in a corner of the board
+    count_opp_corner_moves = 0
     for move in opp_moves:
         if move in corners:
             ++count_opp_corner_moves
 
     count_own_moves = len(game.get_legal_moves(player))
     count_opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    # Return the difference in the given player's legal moves and the
+    # opponnent's legal moves, plus the number of the opponent's
+    # legal moves that result in a corner position
     return float(count_opp_corner_moves + (count_own_moves - count_opp_moves))
 
 
@@ -273,13 +292,15 @@ class MinimaxPlayer(IsolationPlayer):
         """Minimax helper function to get maximum value"""
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
-
+        
+        # Get the legal moves for the given player
         legal_moves = game.get_legal_moves()
 
         # If there are no legal moves, or we've reached 0 depth, return score
         if not legal_moves or depth == 0:
             return self.score(game, self)
 
+        # Start our return value with the lowest possible maximum
         value = float("-inf")
         for move in legal_moves:
             forecasted_game = game.forecast_move(move)
@@ -291,13 +312,15 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         
+        # Get all legal moves for the given player
         legal_moves = game.get_legal_moves()
 
+        # If there are no legal moves, or we've reached 0 depth, return score
         if not legal_moves or depth == 0:
             return self.score(game, self)
 
+        # Start our return value with the greatest possible minumum
         value = float("inf")
-
         for move in legal_moves:
             forecasted_game = game.forecast_move(move)
             value = min(value, self.max_value(forecasted_game, depth-1))
@@ -351,13 +374,15 @@ class MinimaxPlayer(IsolationPlayer):
         if not legal_moves:
             return game.utility(self)
 
+        # Loop through all legal moves and create a key-value pair
+        # in our dictionary of move: score
         moves_dict = dict()
-
         for move in legal_moves:
             forecasted_game = game.forecast_move(move)
             score = self.min_value(forecasted_game, depth-1)
             moves_dict[move] = score
 
+        # Return the move with the highest score
         return max(moves_dict, key=moves_dict.get)
 
 class AlphaBetaPlayer(IsolationPlayer):
@@ -428,17 +453,25 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
+        # Get the legal moves for the given player
         legal_moves = game.get_legal_moves()
+
+        # If there are no legal moves, or we've reached 0 depth, return score
         if not legal_moves or depth == 0:
             return self.score(game, self)
-
+        
+        # Start our return value with the lowest possible maximum
         value = float("-inf")
         for move in legal_moves:
             forecasted_game = game.forecast_move(move)
             value = max(value, self.min_value(game=forecasted_game, depth=depth-1, alpha=alpha, beta=beta))
+            # If value is greater than or equal to the current beta value
+            # we can prune the remaining moves
             if value >= beta:
                 return value
+            # Update alpha with the maximum of value and the minimum score
             alpha = max(alpha, value)
+        
         return value
 
     def min_value(self, game, depth, alpha, beta):
@@ -447,18 +480,26 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
-
+        
+        # Get the legal moves for the given player
         legal_moves = game.get_legal_moves()
+
+        # If there are no legal moves, or we've reached 0 depth, return score
         if not legal_moves or depth == 0:
             return self.score(game, self)
         
+        # Start our return value with the greatest possible minimum
         value = float("inf")
         for move in legal_moves:
             forecasted_game = game.forecast_move(move)
             value = min(value, self.max_value(game=forecasted_game, depth=depth-1, alpha=alpha, beta=beta))
+            # If value is less than or equal to the current alpha value
+            # we can prune the remaining moves
             if value <= alpha:
                 return value
+            # Update beta with the minimum of value and the maximum score
             beta = min(beta, value)
+        
         return value
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
@@ -509,6 +550,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
+        # Get legal moves for given player
         legal_moves = game.get_legal_moves()
 
         if not legal_moves:
@@ -517,13 +559,14 @@ class AlphaBetaPlayer(IsolationPlayer):
         if depth == 0:
             return self.score(game, self)
 
+        # Loop through all legal moves and create a key-value pair
+        # in our dictionary of move: score
         moves_dict = dict()
         for move in legal_moves:
             forecasted_game = game.forecast_move(move)
             score = self.min_value(game=forecasted_game, depth=depth-1, alpha=alpha, beta=beta)
-            # Update our dictionary to include move and corresponding score
             moves_dict[move] = score
-            # Update alpha based on move score
+            # Update alpha if the move's score is greater
             alpha = max(alpha, score)
         
         # Return the move with the greatest score
