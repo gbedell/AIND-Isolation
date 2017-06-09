@@ -14,10 +14,16 @@ def custom_score(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
-    This should be the best heuristic function for your project submission.
-
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
+    This heuristic function is built around the theory that being in a corner
+    of the board puts a player in a bad position. Immediately, if the given
+    player is a corner, the minimum possible score (-infinity) is returned. 
+    If the given player's opponent position is in the corner, the maximum
+    possible score (infinity) is returned. If neither player is in a corner,
+    each player's legal moves are evaluated. If either player has a legal move
+    that results in the player being in the corner, it is removed from their
+    legal moves. The end result is the difference between the given player's
+    legal moves minus any corner moves, and the opponent's legal moves minus
+    any corner moves.
 
     Parameters
     ----------
@@ -34,16 +40,51 @@ def custom_score(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    
+    if game.is_loser(player):
+        return float("-inf")
 
+    if game.is_winner(player):
+        return float("inf")
+    
+    corners = [(0,0), (0,game.width), (game.height,0), (game.height,game.width)]
+
+    if game.get_player_location(player) in corners:
+        return float("-inf")
+
+    if game.get_player_location(game.get_opponent(player)) in corners:
+        return float("inf")
+    
+    own_moves = game.get_legal_moves(player)
+    count_own_corner_moves = 0
+    for own_move in own_moves:
+        if own_move in corners:
+            ++count_own_corner_moves
+    net_own_moves = len(own_moves) - count_own_corner_moves
+
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    count_opp_corner_moves = 0
+    for opp_move in opp_moves:
+        if opp_move in corners:
+            ++count_opp_corner_moves
+    net_opp_moves = len(opp_moves) - count_opp_corner_moves
+
+    return float(net_own_moves - net_opp_moves)
 
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
+    This heuristic function is also built around the theory that a corner
+    position on the board is a bad position. This function will calculate the
+    number of legal moves that result in each player being in a corner of the
+    board. Depending on the difference between the opponent's corner moves
+    and the given player's corner moves will apply a weight to the final 
+    value.
+
+    If the difference results in the opposing player having more possible
+    corner moves (a good thing for the given player) a positive weight of 1.5 will
+    be applied to the final score.
 
     Parameters
     ----------
@@ -60,16 +101,58 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
 
+    if game.is_winner(player):
+        return float("inf")
+
+    #Corners
+    corners = [(0,0), (0,game.width), (game.height,0), (game.height,game.width)]
+
+    own_moves = game.get_legal_moves(player)
+    count_own_corner_moves = 0
+    for own_move in own_moves:
+        if own_move in corners:
+            ++count_own_corner_moves
+
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    count_opp_corner_moves = 0
+    for opp_move in opp_moves:
+        if opp_move in corners:
+            ++count_opp_corner_moves
+
+    # If the given player has more corner moves than the opponent
+    # this is a bad thing, and this will evaluate to a negative value
+    net_corner_moves = count_own_corner_moves - count_opp_corner_moves
+
+    # If the given player has more corner moves, apply a negative weight
+    if net_corner_moves > 0:
+        weight = -1.5 * net_corner_moves
+    # If the given player has less corner moves, apply a positive weight
+    elif net_corner_moves < 0:
+        weight = 1.5 * net_corner_moves
+    # If both players have the same number of corner moves, apply
+    # (essentially) no weight
+    else:
+        weight = 1
+
+    # Resulting score is our weight applied to the difference between
+    # the given's players moves and the opponent's moves
+    return float(weight * (len(own_moves) - len(opp_moves)))
 
 def custom_score_3(game, player):
     """Calculate the heuristic value of a game state from the point of view
     of the given player.
 
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
+    This heuristic function increases the value for the given player when
+    its opponent has potential moves that include a corner. The theory behind
+    this, is that being in the corner increases your chance of losing. Thus,
+    if the player's opponent has a potential move that includes a corner, we
+    want to include the chance of that move happening. The function will
+    take the difference between the opponent's legal moves and the given
+    player's legal moves, and then add one for every opponent move that
+    would result in the opponent being cornered.
 
     Parameters
     ----------
@@ -86,8 +169,24 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+    
+    corners = [(0,0), (0,game.width), (game.height,0), (game.height,game.width)]
+
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    count_opp_corner_moves = 0
+
+    for move in opp_moves:
+        if move in corners:
+            ++count_opp_corner_moves
+
+    count_own_moves = len(game.get_legal_moves(player))
+    count_opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(count_opp_corner_moves + (count_own_moves - count_opp_moves))
 
 
 class IsolationPlayer:
@@ -248,6 +347,9 @@ class MinimaxPlayer(IsolationPlayer):
 
         # Get all legal moves
         legal_moves = game.get_legal_moves()
+
+        if not legal_moves:
+            return game.utility(self)
 
         moves_dict = dict()
 
