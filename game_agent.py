@@ -289,7 +289,7 @@ class MinimaxPlayer(IsolationPlayer):
         return best_move
 
     def max_value(self, game, depth):
-        """Minimax helper function to get maximum value"""
+        """Returns the maximum possible value given a game and depth"""
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         
@@ -308,7 +308,7 @@ class MinimaxPlayer(IsolationPlayer):
         return value
 
     def min_value(self, game, depth):
-        """Minimax helper function to get minimum value"""
+        """Returns the minimum possible value given a game and depth"""
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         
@@ -371,7 +371,7 @@ class MinimaxPlayer(IsolationPlayer):
         # Get all legal moves
         legal_moves = game.get_legal_moves()
 
-        if not legal_moves:
+        if not legal_moves or depth == 0:
             return game.utility(self)
 
         # Loop through all legal moves and create a key-value pair
@@ -430,26 +430,23 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            for depth in itertools.count():
 
+            # Iterate from 0 to infinity...
+            for depth in itertools.count():
                 # For each depth we go, continue updating our best_move
                 # because we are becoming more intelligent as depth gets
-                # deeper. Once we reach our maximum allotted time,
-                # return the best_move we have found so far
+                # deeper
                 best_move =  self.alphabeta(game, depth)
-                if best_move == SearchTimeout():
-                    return best_move
 
         except SearchTimeout:
-            pass  # Handle any actions required after timeout as needed
+            # Once we've timed out, return the best move we've found so far
+            return best_move
 
         # Return the best move from the last completed search iteration
         return best_move
     
     def max_value(self, game, depth, alpha, beta):
-        """
-        TODO: description
-        """
+        """Returns the maximum possible value given a game and depth"""
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
@@ -475,9 +472,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         return value
 
     def min_value(self, game, depth, alpha, beta):
-        """
-        TODO: description
-        """
+        """Returns the minimum possible value given a game and depth"""
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
         
@@ -553,11 +548,11 @@ class AlphaBetaPlayer(IsolationPlayer):
         # Get legal moves for given player
         legal_moves = game.get_legal_moves()
 
-        if not legal_moves:
+        if not legal_moves or depth == 0:
             return game.utility(self)
         
-        if depth == 0:
-            return self.score(game, self)
+        # if depth == 0:
+        #     return self.score(game, self)
 
         # Loop through all legal moves and create a key-value pair
         # in our dictionary of move: score
